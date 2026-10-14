@@ -1,0 +1,269 @@
+﻿CREATE VIEW myview AS
+    SELECT name, temp_lo, temp_hi, prcp, date, location
+        FROM weather, cities
+        WHERE city = name;
+CREATE VIEW
+SELECT * FROM myview;
+     name      | temp_lo | temp_hi | prcp |    date    | location  
+---------------+---------+---------+------+------------+-----------
+ San Francisco |      46 |      50 | 0.25 | 1994-11-27 | (-194,53)
+ San Francisco |      41 |      55 |    0 | 1994-11-29 | (-194,53)
+(2 rows)
+
+DROP TABLE weather, cities CASCADE;
+DROP TABLE
+CREATE TABLE cities (
+        name     varchar(80) primary key,
+        location point
+);
+CREATE TABLE
+CREATE TABLE weather (
+        city      varchar(80) references cities(name),
+        temp_lo   int,
+        temp_hi   int,
+        prcp      real,
+        date      date
+);
+CREATE TABLE
+INSERT INTO cities VALUES ('San Francisco', '(-194.0, 53.0)');
+INSERT 0 1
+INSERT INTO weather VALUES ('San Francisco', 46, 50, 0.25, '1994-11-27');
+INSERT 0 1
+INSERT INTO weather VALUES ('San Francisco', 41, 55, 0.0, '1994-11-29');
+INSERT 0 1
+CREATE VIEW myview AS
+    SELECT name, temp_lo, temp_hi, prcp, date, location
+        FROM weather, cities
+        WHERE city = name;
+CREATE VIEW
+SELECT * FROM myview;
+     name      | temp_lo | temp_hi | prcp |    date    | location  
+---------------+---------+---------+------+------------+-----------
+ San Francisco |      46 |      50 | 0.25 | 1994-11-27 | (-194,53)
+ San Francisco |      41 |      55 |    0 | 1994-11-29 | (-194,53)
+(2 rows)
+
+CREATE TABLE branches (
+    name    text primary key,
+    balance numeric(10, 2)
+);
+CREATE TABLE
+CREATE TABLE accounts (
+    name        text primary key,
+    branch_name text references branches(name),
+    balance     numeric(10, 2)
+);
+CREATE TABLE
+INSERT INTO branches VALUES ('Centro', 1000.00), ('Norte', 1000.00);
+INSERT 0 2
+INSERT INTO accounts VALUES
+    ('Alice', 'Centro', 500.00),
+    ('Bob',   'Norte',  500.00),
+    ('Wally', 'Norte',  500.00);
+INSERT 0 3
+BEGIN;
+BEGIN
+UPDATE accounts SET balance = balance - 100.00
+    WHERE name = 'Alice';
+UPDATE 1
+UPDATE branches SET balance = balance - 100.00
+    WHERE name = (SELECT branch_name FROM accounts WHERE name = 'Alice');
+UPDATE 1
+UPDATE accounts SET balance = balance + 100.00
+    WHERE name = 'Bob';
+UPDATE 1
+UPDATE branches SET balance = balance + 100.00
+    WHERE name = (SELECT branch_name FROM accounts WHERE name = 'Bob');
+UPDATE 1
+COMMIT;
+COMMIT
+SELECT * FROM accounts ORDER BY name;
+ name  | branch_name | balance 
+-------+-------------+---------
+ Alice | Centro      |  400.00
+ Bob   | Norte       |  600.00
+ Wally | Norte       |  500.00
+(3 rows)
+
+BEGIN;
+BEGIN
+UPDATE accounts SET balance = balance - 100.00
+    WHERE name = 'Alice';
+UPDATE 1
+SAVEPOINT my_savepoint;
+SAVEPOINT
+UPDATE accounts SET balance = balance + 100.00
+    WHERE name = 'Bob';
+UPDATE 1
+ROLLBACK TO my_savepoint;
+ROLLBACK
+UPDATE accounts SET balance = balance + 100.00
+    WHERE name = 'Wally';
+UPDATE 1
+COMMIT;
+COMMIT
+SELECT * FROM accounts ORDER BY name;
+ name  | branch_name | balance 
+-------+-------------+---------
+ Alice | Centro      |  300.00
+ Bob   | Norte       |  600.00
+ Wally | Norte       |  600.00
+(3 rows)
+
+CREATE TABLE empsalary (
+    depname     text,
+    empno       int,
+    salary      int,
+    enroll_date date
+);
+CREATE TABLE
+INSERT INTO empsalary VALUES
+    ('develop',   11, 5200, '2007-08-15'),
+    ('develop',    7, 4200, '2008-01-01'),
+    ('develop',    9, 4500, '2008-01-01'),
+    ('develop',    8, 6000, '2006-10-01'),
+    ('develop',   10, 5200, '2007-08-01'),
+    ('personnel',  5, 3500, '2007-12-10'),
+    ('personnel',  2, 3900, '2006-12-23'),
+    ('sales',      3, 4800, '2007-08-01'),
+    ('sales',      1, 5000, '2006-10-01'),
+    ('sales',      4, 4800, '2007-08-08');
+INSERT 0 10
+SELECT depname, empno, salary, avg(salary) OVER (PARTITION BY depname)
+    FROM empsalary;
+  depname  | empno | salary |          avg          
+-----------+-------+--------+-----------------------
+ develop   |    11 |   5200 | 5020.0000000000000000
+ develop   |     7 |   4200 | 5020.0000000000000000
+ develop   |     9 |   4500 | 5020.0000000000000000
+ develop   |     8 |   6000 | 5020.0000000000000000
+ develop   |    10 |   5200 | 5020.0000000000000000
+ personnel |     5 |   3500 | 3700.0000000000000000
+ personnel |     2 |   3900 | 3700.0000000000000000
+ sales     |     3 |   4800 | 4866.6666666666666667
+ sales     |     1 |   5000 | 4866.6666666666666667
+ sales     |     4 |   4800 | 4866.6666666666666667
+(10 rows)
+
+SELECT depname, empno, salary,
+       rank() OVER (PARTITION BY depname ORDER BY salary DESC)
+    FROM empsalary;
+  depname  | empno | salary | rank 
+-----------+-------+--------+------
+ develop   |     8 |   6000 |    1
+ develop   |    10 |   5200 |    2
+ develop   |    11 |   5200 |    2
+ develop   |     9 |   4500 |    4
+ develop   |     7 |   4200 |    5
+ personnel |     2 |   3900 |    1
+ personnel |     5 |   3500 |    2
+ sales     |     1 |   5000 |    1
+ sales     |     3 |   4800 |    2
+ sales     |     4 |   4800 |    2
+(10 rows)
+
+SELECT salary, sum(salary) OVER () FROM empsalary;
+ salary |  sum  
+--------+-------
+   5200 | 47100
+   4200 | 47100
+   4500 | 47100
+   6000 | 47100
+   5200 | 47100
+   3500 | 47100
+   3900 | 47100
+   4800 | 47100
+   5000 | 47100
+   4800 | 47100
+(10 rows)
+
+SELECT salary, sum(salary) OVER (ORDER BY salary) FROM empsalary;
+ salary |  sum  
+--------+-------
+   3500 |  3500
+   3900 |  7400
+   4200 | 11600
+   4500 | 16100
+   4800 | 25700
+   4800 | 25700
+   5000 | 30700
+   5200 | 41100
+   5200 | 41100
+   6000 | 47100
+(10 rows)
+
+SELECT depname, empno, salary, enroll_date
+FROM
+  (SELECT depname, empno, salary, enroll_date,
+          rank() OVER (PARTITION BY depname ORDER BY salary DESC, empno) AS pos
+     FROM empsalary
+  ) AS ss
+WHERE pos < 3;
+  depname  | empno | salary | enroll_date 
+-----------+-------+--------+-------------
+ develop   |     8 |   6000 | 2006-10-01
+ develop   |    10 |   5200 | 2007-08-01
+ personnel |     2 |   3900 | 2006-12-23
+ personnel |     5 |   3500 | 2007-12-10
+ sales     |     1 |   5000 | 2006-10-01
+ sales     |     3 |   4800 | 2007-08-01
+(6 rows)
+
+SELECT sum(salary) OVER w, avg(salary) OVER w
+  FROM empsalary
+  WINDOW w AS (PARTITION BY depname ORDER BY salary DESC);
+  sum  |          avg          
+-------+-----------------------
+  6000 | 6000.0000000000000000
+ 16400 | 5466.6666666666666667
+ 16400 | 5466.6666666666666667
+ 20900 | 5225.0000000000000000
+ 25100 | 5020.0000000000000000
+  3900 | 3900.0000000000000000
+  7400 | 3700.0000000000000000
+  5000 | 5000.0000000000000000
+ 14600 | 4866.6666666666666667
+ 14600 | 4866.6666666666666667
+(10 rows)
+
+CREATE SCHEMA herencia;
+CREATE SCHEMA
+SET search_path TO herencia, public;
+SET
+CREATE TABLE cities (
+  name       text,
+  population real,
+  elevation  int     -- en pies
+);
+CREATE TABLE
+CREATE TABLE capitals (
+  state      char(2) UNIQUE NOT NULL
+) INHERITS (cities);
+CREATE TABLE
+INSERT INTO cities VALUES
+    ('Las Vegas', 2.583e+05, 2174),
+    ('Mariposa',  1200,      1953);
+INSERT 0 2
+INSERT INTO capitals VALUES ('Madison', 1.913e+05, 845, 'WI');
+INSERT 0 1
+SELECT name, elevation
+  FROM cities
+  WHERE elevation > 500;
+   name    | elevation 
+-----------+-----------
+ Las Vegas |      2174
+ Mariposa  |      1953
+ Madison   |       845
+(3 rows)
+
+SELECT name, elevation
+    FROM ONLY cities
+    WHERE elevation > 500;
+   name    | elevation 
+-----------+-----------
+ Las Vegas |      2174
+ Mariposa  |      1953
+(2 rows)
+
+RESET search_path;
+RESET

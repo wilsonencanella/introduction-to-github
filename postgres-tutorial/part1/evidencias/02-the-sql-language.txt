@@ -1,0 +1,219 @@
+﻿CREATE TABLE weather (
+    city      varchar(80),
+    temp_lo   int,           -- temperatura mínima
+    temp_hi   int,           -- temperatura máxima
+    prcp      real,          -- lluvia
+    date      date
+);
+CREATE TABLE
+CREATE TABLE cities (
+    name      varchar(80),
+    location  point
+);
+CREATE TABLE
+INSERT INTO weather VALUES ('San Francisco', 46, 50, 0.25, '1994-11-27');
+INSERT 0 1
+INSERT INTO cities VALUES ('San Francisco', '(-194.0, 53.0)');
+INSERT 0 1
+INSERT INTO weather (city, temp_lo, temp_hi, prcp, date)
+    VALUES ('San Francisco', 43, 57, 0.0, '1994-11-29');
+INSERT 0 1
+INSERT INTO weather (date, city, temp_hi, temp_lo)
+    VALUES ('1994-11-29', 'Hayward', 54, 37);
+INSERT 0 1
+SELECT * FROM weather;
+     city      | temp_lo | temp_hi | prcp |    date    
+---------------+---------+---------+------+------------
+ San Francisco |      46 |      50 | 0.25 | 1994-11-27
+ San Francisco |      43 |      57 |    0 | 1994-11-29
+ Hayward       |      37 |      54 |      | 1994-11-29
+(3 rows)
+
+SELECT city, temp_lo, temp_hi, prcp, date FROM weather;
+     city      | temp_lo | temp_hi | prcp |    date    
+---------------+---------+---------+------+------------
+ San Francisco |      46 |      50 | 0.25 | 1994-11-27
+ San Francisco |      43 |      57 |    0 | 1994-11-29
+ Hayward       |      37 |      54 |      | 1994-11-29
+(3 rows)
+
+SELECT city, (temp_hi + temp_lo) / 2 AS temp_avg, date FROM weather;
+     city      | temp_avg |    date    
+---------------+----------+------------
+ San Francisco |       48 | 1994-11-27
+ San Francisco |       50 | 1994-11-29
+ Hayward       |       45 | 1994-11-29
+(3 rows)
+
+SELECT * FROM weather
+    WHERE city = 'San Francisco' AND prcp > 0.0;
+     city      | temp_lo | temp_hi | prcp |    date    
+---------------+---------+---------+------+------------
+ San Francisco |      46 |      50 | 0.25 | 1994-11-27
+(1 row)
+
+SELECT * FROM weather
+    ORDER BY city;
+     city      | temp_lo | temp_hi | prcp |    date    
+---------------+---------+---------+------+------------
+ Hayward       |      37 |      54 |      | 1994-11-29
+ San Francisco |      46 |      50 | 0.25 | 1994-11-27
+ San Francisco |      43 |      57 |    0 | 1994-11-29
+(3 rows)
+
+SELECT * FROM weather
+    ORDER BY city, temp_lo;
+     city      | temp_lo | temp_hi | prcp |    date    
+---------------+---------+---------+------+------------
+ Hayward       |      37 |      54 |      | 1994-11-29
+ San Francisco |      43 |      57 |    0 | 1994-11-29
+ San Francisco |      46 |      50 | 0.25 | 1994-11-27
+(3 rows)
+
+SELECT DISTINCT city
+    FROM weather;
+     city      
+---------------
+ Hayward
+ San Francisco
+(2 rows)
+
+SELECT DISTINCT city
+    FROM weather
+    ORDER BY city;
+     city      
+---------------
+ Hayward
+ San Francisco
+(2 rows)
+
+SELECT * FROM weather JOIN cities ON city = name;
+     city      | temp_lo | temp_hi | prcp |    date    |     name      | location  
+---------------+---------+---------+------+------------+---------------+-----------
+ San Francisco |      46 |      50 | 0.25 | 1994-11-27 | San Francisco | (-194,53)
+ San Francisco |      43 |      57 |    0 | 1994-11-29 | San Francisco | (-194,53)
+(2 rows)
+
+SELECT city, temp_lo, temp_hi, prcp, date, location
+    FROM weather JOIN cities ON city = name;
+     city      | temp_lo | temp_hi | prcp |    date    | location  
+---------------+---------+---------+------+------------+-----------
+ San Francisco |      46 |      50 | 0.25 | 1994-11-27 | (-194,53)
+ San Francisco |      43 |      57 |    0 | 1994-11-29 | (-194,53)
+(2 rows)
+
+SELECT weather.city, weather.temp_lo, weather.temp_hi,
+       weather.prcp, weather.date, cities.location
+    FROM weather JOIN cities ON weather.city = cities.name;
+     city      | temp_lo | temp_hi | prcp |    date    | location  
+---------------+---------+---------+------+------------+-----------
+ San Francisco |      46 |      50 | 0.25 | 1994-11-27 | (-194,53)
+ San Francisco |      43 |      57 |    0 | 1994-11-29 | (-194,53)
+(2 rows)
+
+SELECT *
+    FROM weather, cities
+    WHERE city = name;
+     city      | temp_lo | temp_hi | prcp |    date    |     name      | location  
+---------------+---------+---------+------+------------+---------------+-----------
+ San Francisco |      46 |      50 | 0.25 | 1994-11-27 | San Francisco | (-194,53)
+ San Francisco |      43 |      57 |    0 | 1994-11-29 | San Francisco | (-194,53)
+(2 rows)
+
+SELECT *
+    FROM weather LEFT OUTER JOIN cities ON weather.city = cities.name;
+     city      | temp_lo | temp_hi | prcp |    date    |     name      | location  
+---------------+---------+---------+------+------------+---------------+-----------
+ San Francisco |      46 |      50 | 0.25 | 1994-11-27 | San Francisco | (-194,53)
+ San Francisco |      43 |      57 |    0 | 1994-11-29 | San Francisco | (-194,53)
+ Hayward       |      37 |      54 |      | 1994-11-29 |               | 
+(3 rows)
+
+SELECT w1.city, w1.temp_lo AS low, w1.temp_hi AS high,
+       w2.city, w2.temp_lo AS low, w2.temp_hi AS high
+    FROM weather w1 JOIN weather w2
+        ON w1.temp_lo < w2.temp_lo AND w1.temp_hi > w2.temp_hi;
+     city      | low | high |     city      | low | high 
+---------------+-----+------+---------------+-----+------
+ San Francisco |  43 |   57 | San Francisco |  46 |   50
+ Hayward       |  37 |   54 | San Francisco |  46 |   50
+(2 rows)
+
+SELECT *
+    FROM weather w JOIN cities c ON w.city = c.name;
+     city      | temp_lo | temp_hi | prcp |    date    |     name      | location  
+---------------+---------+---------+------+------------+---------------+-----------
+ San Francisco |      46 |      50 | 0.25 | 1994-11-27 | San Francisco | (-194,53)
+ San Francisco |      43 |      57 |    0 | 1994-11-29 | San Francisco | (-194,53)
+(2 rows)
+
+SELECT max(temp_lo) FROM weather;
+ max 
+-----
+  46
+(1 row)
+
+SELECT city FROM weather
+    WHERE temp_lo = (SELECT max(temp_lo) FROM weather);
+     city      
+---------------
+ San Francisco
+(1 row)
+
+SELECT city, count(*), max(temp_lo)
+    FROM weather
+    GROUP BY city;
+     city      | count | max 
+---------------+-------+-----
+ Hayward       |     1 |  37
+ San Francisco |     2 |  46
+(2 rows)
+
+SELECT city, count(*), max(temp_lo)
+    FROM weather
+    GROUP BY city
+    HAVING max(temp_lo) < 40;
+  city   | count | max 
+---------+-------+-----
+ Hayward |     1 |  37
+(1 row)
+
+SELECT city, count(*), max(temp_lo)
+    FROM weather
+    WHERE city LIKE 'S%'
+    GROUP BY city;
+     city      | count | max 
+---------------+-------+-----
+ San Francisco |     2 |  46
+(1 row)
+
+SELECT city, count(*) FILTER (WHERE temp_lo < 45), max(temp_lo)
+    FROM weather
+    GROUP BY city;
+     city      | count | max 
+---------------+-------+-----
+ Hayward       |     1 |  37
+ San Francisco |     1 |  46
+(2 rows)
+
+UPDATE weather
+    SET temp_hi = temp_hi - 2,  temp_lo = temp_lo - 2
+    WHERE date > '1994-11-28';
+UPDATE 2
+SELECT * FROM weather;
+     city      | temp_lo | temp_hi | prcp |    date    
+---------------+---------+---------+------+------------
+ San Francisco |      46 |      50 | 0.25 | 1994-11-27
+ San Francisco |      41 |      55 |    0 | 1994-11-29
+ Hayward       |      35 |      52 |      | 1994-11-29
+(3 rows)
+
+DELETE FROM weather WHERE city = 'Hayward';
+DELETE 1
+SELECT * FROM weather;
+     city      | temp_lo | temp_hi | prcp |    date    
+---------------+---------+---------+------+------------
+ San Francisco |      46 |      50 | 0.25 | 1994-11-27
+ San Francisco |      41 |      55 |    0 | 1994-11-29
+(2 rows)
+

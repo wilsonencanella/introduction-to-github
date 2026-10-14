@@ -1,0 +1,24 @@
+# postgres para practicar el tutorial oficial (part i)
+# https://www.postgresql.org/docs/current/tutorial.html
+services:
+  db:
+    image: postgres:18
+    container_name: pg-tutorial-part1
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      # la base "mydb" es la misma que crea el tutorial en la seccion 1.3
+      POSTGRES_DB: mydb
+    ports:
+      - "5432:5432"
+    volumes:
+      # los datos quedan aqui mismo, en ./data
+      # ojo: desde postgres 18 se monta /var/lib/postgresql (ya no .../data)
+      - ./data:/var/lib/postgresql
+      # los scripts corren solos la primera vez que arranca (con ./data vacio)
+      - ./sql:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d mydb"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
