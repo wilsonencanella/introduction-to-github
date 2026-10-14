@@ -1,0 +1,227 @@
+﻿CREATE SCHEMA biblioteca;
+CREATE SCHEMA
+SET search_path TO biblioteca;
+SET
+CREATE TABLE autores (
+    id      serial primary key,
+    nombre  varchar(100) NOT NULL,
+    pais    varchar(50)
+);
+CREATE TABLE
+CREATE TABLE libros (
+    id        serial primary key,
+    titulo    varchar(150) NOT NULL,
+    anio      int CHECK (anio > 0),
+    genero    varchar(50),
+    autor_id  int NOT NULL references autores(id)
+);
+CREATE TABLE
+CREATE TABLE socios (
+    id      serial primary key,
+    nombre  varchar(100) NOT NULL,
+    email   varchar(100) UNIQUE
+);
+CREATE TABLE
+CREATE TABLE prestamos (
+    id               serial primary key,
+    libro_id         int NOT NULL references libros(id),
+    socio_id         int NOT NULL references socios(id),
+    fecha_prestamo   date NOT NULL,
+    fecha_devolucion date   -- si está en null es que todavía no lo devuelven
+);
+CREATE TABLE
+INSERT INTO autores (nombre, pais) VALUES
+    ('Gabriel García Márquez', 'Colombia'),
+    ('Isabel Allende',         'Chile'),
+    ('Julio Cortázar',         'Argentina'),
+    ('Mario Vargas Llosa',     'Perú');
+INSERT 0 4
+INSERT INTO libros (titulo, anio, genero, autor_id) VALUES
+    ('Cien años de soledad',         1967, 'novela', 1),
+    ('El amor en los tiempos del cólera', 1985, 'novela', 1),
+    ('Crónica de una muerte anunciada',   1981, 'novela', 1),
+    ('La casa de los espíritus',     1982, 'novela', 2),
+    ('Paula',                        1994, 'memorias', 2),
+    ('Rayuela',                      1963, 'novela', 3),
+    ('Bestiario',                    1951, 'cuentos', 3),
+    ('La ciudad y los perros',       1963, 'novela', 4);
+INSERT 0 8
+INSERT INTO socios (nombre, email) VALUES
+    ('Ana Pérez',   'ana@correo.com'),
+    ('Luis Gómez',  'luis@correo.com'),
+    ('Marta Ruiz',  'marta@correo.com'),
+    ('Pedro Soto',  'pedro@correo.com');
+INSERT 0 4
+INSERT INTO prestamos (libro_id, socio_id, fecha_prestamo, fecha_devolucion) VALUES
+    (1, 1, '2026-09-01', '2026-09-10'),
+    (6, 1, '2026-09-12', NULL),
+    (4, 2, '2026-09-03', '2026-09-20'),
+    (1, 2, '2026-09-21', NULL),
+    (7, 3, '2026-09-05', '2026-09-07'),
+    (2, 3, '2026-09-08', '2026-09-30'),
+    (8, 3, '2026-10-01', NULL),
+    (1, 3, '2026-08-15', '2026-08-30');
+INSERT 0 8
+SELECT titulo, anio, genero
+    FROM libros
+    ORDER BY anio;
+              titulo               | anio |  genero  
+-----------------------------------+------+----------
+ Bestiario                         | 1951 | cuentos
+ Rayuela                           | 1963 | novela
+ La ciudad y los perros            | 1963 | novela
+ Cien años de soledad              | 1967 | novela
+ Crónica de una muerte anunciada   | 1981 | novela
+ La casa de los espíritus          | 1982 | novela
+ El amor en los tiempos del cólera | 1985 | novela
+ Paula                             | 1994 | memorias
+(8 rows)
+
+SELECT l.titulo, a.nombre AS autor, a.pais
+    FROM libros l JOIN autores a ON l.autor_id = a.id
+    ORDER BY a.nombre, l.titulo;
+              titulo               |         autor          |   pais    
+-----------------------------------+------------------------+-----------
+ Cien años de soledad              | Gabriel García Márquez | Colombia
+ Crónica de una muerte anunciada   | Gabriel García Márquez | Colombia
+ El amor en los tiempos del cólera | Gabriel García Márquez | Colombia
+ La casa de los espíritus          | Isabel Allende         | Chile
+ Paula                             | Isabel Allende         | Chile
+ Bestiario                         | Julio Cortázar         | Argentina
+ Rayuela                           | Julio Cortázar         | Argentina
+ La ciudad y los perros            | Mario Vargas Llosa     | Perú
+(8 rows)
+
+SELECT s.nombre, count(p.id) AS total_prestamos
+    FROM socios s LEFT JOIN prestamos p ON p.socio_id = s.id
+    GROUP BY s.nombre
+    ORDER BY total_prestamos DESC, s.nombre;
+   nombre   | total_prestamos 
+------------+-----------------
+ Marta Ruiz |               4
+ Ana Pérez  |               2
+ Luis Gómez |               2
+ Pedro Soto |               0
+(4 rows)
+
+SELECT a.nombre, count(*) AS libros
+    FROM autores a JOIN libros l ON l.autor_id = a.id
+    GROUP BY a.nombre
+    HAVING count(*) > 1;
+         nombre         | libros 
+------------------------+--------
+ Isabel Allende         |      2
+ Gabriel García Márquez |      3
+ Julio Cortázar         |      2
+(3 rows)
+
+SELECT l.titulo, count(*) AS veces
+    FROM prestamos p JOIN libros l ON l.id = p.libro_id
+    GROUP BY l.titulo
+    HAVING count(*) = (
+        SELECT max(c) FROM (
+            SELECT count(*) AS c FROM prestamos GROUP BY libro_id
+        ) AS conteos
+    );
+        titulo        | veces 
+----------------------+-------
+ Cien años de soledad |     3
+(1 row)
+
+SELECT l.genero,
+       count(*)                                          AS prestamos,
+       count(*) FILTER (WHERE p.fecha_devolucion IS NULL) AS pendientes
+    FROM prestamos p JOIN libros l ON l.id = p.libro_id
+    GROUP BY l.genero
+    ORDER BY l.genero;
+ genero  | prestamos | pendientes 
+---------+-----------+------------
+ cuentos |         1 |          0
+ novela  |         7 |          3
+(2 rows)
+
+CREATE VIEW prestamos_pendientes AS
+    SELECT s.nombre AS socio, l.titulo, p.fecha_prestamo,
+           current_date - p.fecha_prestamo AS dias_prestado
+        FROM prestamos p
+        JOIN socios s ON s.id = p.socio_id
+        JOIN libros l ON l.id = p.libro_id
+        WHERE p.fecha_devolucion IS NULL;
+CREATE VIEW
+SELECT * FROM prestamos_pendientes ORDER BY fecha_prestamo;
+   socio    |         titulo         | fecha_prestamo | dias_prestado 
+------------+------------------------+----------------+---------------
+ Ana Pérez  | Rayuela                | 2026-09-12     |            32
+ Luis Gómez | Cien años de soledad   | 2026-09-21     |            23
+ Marta Ruiz | La ciudad y los perros | 2026-10-01     |            13
+(3 rows)
+
+SELECT genero, titulo, veces,
+       rank() OVER (PARTITION BY genero ORDER BY veces DESC) AS puesto
+    FROM (
+        SELECT l.genero, l.titulo, count(p.id) AS veces
+            FROM libros l LEFT JOIN prestamos p ON p.libro_id = l.id
+            GROUP BY l.genero, l.titulo
+    ) AS t
+    ORDER BY genero, puesto;
+  genero  |              titulo               | veces | puesto 
+----------+-----------------------------------+-------+--------
+ cuentos  | Bestiario                         |     1 |      1
+ memorias | Paula                             |     0 |      1
+ novela   | Cien años de soledad              |     3 |      1
+ novela   | La ciudad y los perros            |     1 |      2
+ novela   | La casa de los espíritus          |     1 |      2
+ novela   | El amor en los tiempos del cólera |     1 |      2
+ novela   | Rayuela                           |     1 |      2
+ novela   | Crónica de una muerte anunciada   |     0 |      6
+(8 rows)
+
+SELECT s.nombre, l.titulo, p.fecha_prestamo,
+       row_number() OVER (PARTITION BY s.id ORDER BY p.fecha_prestamo) AS n
+    FROM prestamos p
+    JOIN socios s ON s.id = p.socio_id
+    JOIN libros l ON l.id = p.libro_id
+    ORDER BY s.nombre, n;
+   nombre   |              titulo               | fecha_prestamo | n 
+------------+-----------------------------------+----------------+---
+ Ana Pérez  | Cien años de soledad              | 2026-09-01     | 1
+ Ana Pérez  | Rayuela                           | 2026-09-12     | 2
+ Luis Gómez | La casa de los espíritus          | 2026-09-03     | 1
+ Luis Gómez | Cien años de soledad              | 2026-09-21     | 2
+ Marta Ruiz | Cien años de soledad              | 2026-08-15     | 1
+ Marta Ruiz | Bestiario                         | 2026-09-05     | 2
+ Marta Ruiz | El amor en los tiempos del cólera | 2026-09-08     | 3
+ Marta Ruiz | La ciudad y los perros            | 2026-10-01     | 4
+(8 rows)
+
+BEGIN;
+BEGIN
+UPDATE prestamos SET fecha_devolucion = '2026-10-14'
+    WHERE libro_id = 6 AND socio_id = 1 AND fecha_devolucion IS NULL;
+UPDATE 1
+INSERT INTO prestamos (libro_id, socio_id, fecha_prestamo)
+    VALUES (5, 1, '2026-10-14');
+INSERT 0 1
+COMMIT;
+COMMIT
+SELECT * FROM prestamos_pendientes ORDER BY fecha_prestamo;
+   socio    |         titulo         | fecha_prestamo | dias_prestado 
+------------+------------------------+----------------+---------------
+ Luis Gómez | Cien años de soledad   | 2026-09-21     |            23
+ Marta Ruiz | La ciudad y los perros | 2026-10-01     |            13
+ Ana Pérez  | Paula                  | 2026-10-14     |             0
+(3 rows)
+
+DELETE FROM socios
+    WHERE id NOT IN (SELECT socio_id FROM prestamos);
+DELETE 1
+SELECT * FROM socios ORDER BY id;
+ id |   nombre   |      email       
+----+------------+------------------
+  1 | Ana Pérez  | ana@correo.com
+  2 | Luis Gómez | luis@correo.com
+  3 | Marta Ruiz | marta@correo.com
+(3 rows)
+
+RESET search_path;
+RESET
