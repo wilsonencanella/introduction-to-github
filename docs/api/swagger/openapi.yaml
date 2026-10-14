@@ -1,0 +1,122 @@
+openapi: 3.0.3
+info:
+  title: Saludos API - Wilson Vasquez
+  description: API de ejemplo con un endpoint simple para obtener y crear saludos.
+  version: 1.0.0
+servers:
+  - url: http://localhost:3000
+    description: Servidor local
+paths:
+  /saludos:
+    get:
+      summary: Listar saludos
+      operationId: listarSaludos
+      tags:
+        - Saludos
+      parameters:
+        - name: idioma
+          in: query
+          required: false
+          description: Filtra los saludos por idioma (código ISO).
+          schema:
+            type: string
+            example: es
+      responses:
+        '200':
+          description: Lista de saludos
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Saludo'
+    post:
+      summary: Crear un saludo
+      operationId: crearSaludo
+      tags:
+        - Saludos
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NuevoSaludo'
+      responses:
+        '201':
+          description: Saludo creado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Saludo'
+        '400':
+          description: Datos inválidos
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /saludos/{id}:
+    get:
+      summary: Obtener un saludo por ID
+      operationId: obtenerSaludo
+      tags:
+        - Saludos
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Identificador del saludo.
+          schema:
+            type: integer
+            example: 1
+      responses:
+        '200':
+          description: Saludo encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Saludo'
+        '404':
+          description: Saludo no encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+components:
+  schemas:
+    Saludo:
+      type: object
+      required:
+        - id
+        - mensaje
+        - idioma
+      properties:
+        id:
+          type: integer
+          example: 1
+        mensaje:
+          type: string
+          example: ¡Hola, mundo!
+        idioma:
+          type: string
+          example: es
+    NuevoSaludo:
+      type: object
+      required:
+        - mensaje
+        - idioma
+      properties:
+        mensaje:
+          type: string
+          example: ¡Hola, mundo!
+        idioma:
+          type: string
+          example: es
+    Error:
+      type: object
+      properties:
+        codigo:
+          type: integer
+          example: 404
+        mensaje:
+          type: string
+          example: Saludo no encontrado
