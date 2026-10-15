@@ -1,27 +1,50 @@
-from django.http import HttpResponse
+from django.db.models import F
+from django.http import HttpResponseRedirect
 from django.shortcuts import get_object_or_404, render
+from django.urls import reverse
+from django.views import generic
 
-from .models import Question
+from .models import Choice, Question
 
 
 # las ultimas 5 preguntas, de la mas nueva a la mas vieja
-def index(request):
-    latest_question_list = Question.objects.order_by("-pub_date")[:5]
-    context = {"latest_question_list": latest_question_list}
-    return render(request, "polls/index.html", context)
+class IndexView(generic.ListView):
+    template_name = "polls/index.html"
+    # sin esto la variable en el template se llamaria question_list
+    context_object_name = "latest_question_list"
+
+    def get_queryset(self):
+        return Question.objects.order_by("-pub_date")[:5]
 
 
-# si no existe la pregunta tira un 404 en vez de reventar
-def detail(request, question_id):
-    question = get_object_or_404(Question, pk=question_id)
-    return render(request, "polls/detail.html", {"question": question})
+# detailview ya hace el get_object_or_404 solito usando el pk de la url
+class DetailView(generic.DetailView):
+    model = Question
+    template_name = "polls/detail.html"
 
 
-# por ahora solo texto, en la parte 4 se arma bien
-def results(request, question_id):
-    response = "You're looking at the results of question %s."
-    return HttpResponse(response % question_id)
+class ResultsView(generic.DetailView):
+    model = Question
+    template_name = "polls/results.html"
 
 
 def vote(request, question_id):
-    return HttpResponse("You're voting on question %s." % question_id)
+    question = get_object_or_404(Question, pk=question_id)
+    try:
+        selected_choice = question.choice_set.get(pk=request.POST["choice"])
+    except (KeyError, Choice.DoesNotExist):
+        # no eligio nada (o mando un id raro), le volvemos a mostrar el form con el error
+        return render(
+            request,
+            "polls/detail.html",
+            {
+                "question": question,
+                "error_message": "You didn't select a choice.",
+            },
+        )
+    else:
+        # F() hace la suma en la base, asi dos votos al mismo tiempo no se pisan
+        selected_choice.votes = F("votes") + 1
+        selected_choice.save()
+        # redirect despues del post para que si recarga la pagina no vote doble
+        return HttpResponseRedirect(reverse("polls:results", args=(question.id,)))
