@@ -1,0 +1,9 @@
+/* links de la lista de preguntas en verde */
+li a {
+    color: green;
+}
+
+/* la ruta es relativa a este css, por eso no se usa {% static %} aqui */
+body {
+    background: white url("images/background.png") no-repeat;
+}
