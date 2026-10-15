@@ -1,0 +1,9 @@
+﻿# entorno virtual, cada quien crea el suyo
+.venv/
+
+# cache de python
+__pycache__/
+*.pyc
+
+# base de datos local de desarrollo
+db.sqlite3
