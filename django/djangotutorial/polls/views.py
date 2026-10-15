@@ -1,6 +1,27 @@
 from django.http import HttpResponse
+from django.shortcuts import get_object_or_404, render
+
+from .models import Question
 
 
-# vista mas simple posible, solo devuelve un texto
+# las ultimas 5 preguntas, de la mas nueva a la mas vieja
 def index(request):
-    return HttpResponse("Hello, world. You're at the polls index.")
+    latest_question_list = Question.objects.order_by("-pub_date")[:5]
+    context = {"latest_question_list": latest_question_list}
+    return render(request, "polls/index.html", context)
+
+
+# si no existe la pregunta tira un 404 en vez de reventar
+def detail(request, question_id):
+    question = get_object_or_404(Question, pk=question_id)
+    return render(request, "polls/detail.html", {"question": question})
+
+
+# por ahora solo texto, en la parte 4 se arma bien
+def results(request, question_id):
+    response = "You're looking at the results of question %s."
+    return HttpResponse(response % question_id)
+
+
+def vote(request, question_id):
+    return HttpResponse("You're voting on question %s." % question_id)
